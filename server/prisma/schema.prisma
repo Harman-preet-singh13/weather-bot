@@ -1,0 +1,28 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Subscription {
+  id        Int      @id @default(autoincrement())
+  chatId    String
+  userName  String?
+  city      String
+  blocked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Define a unique constraint to ensure each subscription is unique by chatId and city
+  @@unique([chatId, userName, city], name: "unique_chatId_userName_city")
+}
+
+model CronJob {
+  id       Int    @id @default(autoincrement())
+  schedule String
+}
