@@ -1,115 +1,63 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { UserAuth } from "./context/AuthContext";
+import UserTable from "./components/UserTable";
 import "./App.css";
 
-function App() {
-  const [subscriptions, setSubscriptions] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  async function fetchData() {
+export default function App() {
+  const [loading, setLoading] = useState(true);
+  const { user, googleSignIn, logOut } = UserAuth();
+
+  const handleSignIn = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:3000/api/subscriptions"
-      );
-      const data = response.data;
-
-      const subscriptionsData = data.subscriptions || [];
-
-      setSubscriptions(subscriptionsData);
-      console.log(data);
+      await googleSignIn();
     } catch (error) {
-      console.error("Error:", error);
+      console.log(error);
     }
-  }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await logOut();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
-    fetchData();
-    setIsLoading(false);
-  }, []);
+    const checkAuthentication = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      setLoading(false);
+    };
+    checkAuthentication();
+  }, [user]);
 
-  const handleDelete = async (id) => {
-    try {
-      console.log(id);
-      await axios.delete(`http://localhost:3000/api/subscriptions/${id}`);
-      fetchData();
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
-
-  const handleBlock = async (chatId) => {
-    try {
-      // Call your API endpoint to block the user
-      await axios.post(
-        `http://localhost:3000/api/subscriptions/block/${chatId}`
-      );
-      fetchData(); // Refresh the subscription list after blocking
-    } catch (error) {
-      console.error("Error blocking user:", error);
-    }
-  };
+  const listStyle =
+    "mt-2 cursor-pointer px-2 py-1 hover:bg-blue-600 hover:text-white rounded-md";
 
   return (
     <div className="container">
-      <header className="">
-        <h1 className="text-3xl font-semibold">Admin Panel</h1>
-      </header>
-
-      <div className="user-container">
-        <h2 className="text-xl font-semibold my-2">User Information</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Chat ID</th>
-              <th>User Name</th>
-              <th>Subscribed City</th>
-              <th>Block User</th>
-              <th>Delete User</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {isLoading ? (
-              <>Loading Data...</>
-            ) : (
-              <>
-                {subscriptions.length > 0 ? (
-                  subscriptions.map((subscription) => (
-                    <tr key={subscription.id}>
-                      <td>{subscription.id}</td>
-                      <td>{subscription.chatId}</td>
-                      <td>{subscription.userName}</td>
-                      <td>{subscription.city}</td>
-                      <td>
-                        <button
-                          className="text-blue-500 hover:text-blue-700"
-                          onClick={() => handleBlock(subscription.id)}
-                        >
-                          {subscription.blocked ? "Unblock" : "Block"}
-                        </button>
-                      </td>
-                      <td>
-                        <button
-                          className="text-red-500 hover:text-red-700"
-                          onClick={() => handleDelete(subscription.id)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6">No subscriptions available</td>
-                  </tr>
-                )}
-              </>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {loading ? null : !user ? (
+        <div className="h-screen flex justify-center items-center">
+          <button 
+          onClick={handleSignIn}
+          className="px-4 py-2 text-xl rounded-md font-semibold border border-blue-600 hover:text-white hover:bg-blue-600">
+            Login
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-between">
+            <p className="mt-2 cursor-pointer px-2 py-1">
+              Welcome,{" "}
+              <span className="font-semibold ">{user.displayName}</span>
+            </p>
+            <p className={`${listStyle} mr-2 font-semibold text-center border border-blue-600`} onClick={handleSignOut}>
+              Sign out
+            </p>
+          </div>
+          <UserTable />
+        </>
+      )}
     </div>
   );
 }
-
-export default App;
